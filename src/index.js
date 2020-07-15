@@ -1,27 +1,20 @@
 const { GraphQLServer } = require('graphql-yoga');
+const { PrismaClient } = require('@prisma/client');
 
-const links = [
-  {
-    id: 'link-0',
-    url: 'www.reactjs.org',
-    description: 'The component based library for developers',
-  },
-];
-let idCount = links.length;
+const prisma = new PrismaClient();
+
 const resolvers = {
   Query: {
-    feed: () => links,
+    feed: (parent, args, context) => context.prisma.link.findMany(),
     info: () => `This is API of hackernews clone`,
   },
   Mutation: {
-    post: (parent, args) => {
-      const link = {
-        id: `link-${idCount++}`,
-        description: args.description,
-        url: args.url,
-      };
-      links.push(link);
-      return link;
+    post: (parent, args, context, info) => {
+      const newLink = context.prisma.link.create({
+        data: { description: args.description, url: args.url },
+      });
+
+      return newLink;
     },
     deleteLink: (parent, args) => {
       let count;
@@ -47,6 +40,9 @@ const resolvers = {
 const server = new GraphQLServer({
   typeDefs: './src/schema.graphql',
   resolvers,
+  context: {
+    prisma,
+  },
 });
 
 server.start(() => console.log('Server is listening to the port: 4000'));
