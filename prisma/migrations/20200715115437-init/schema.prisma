@@ -16,3 +16,4 @@ model Link {
   description String
   url         String
 }
+
